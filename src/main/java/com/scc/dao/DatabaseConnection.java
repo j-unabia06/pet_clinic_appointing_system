@@ -6,14 +6,16 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class DatabaseConnection {
+
     private static final String DB_URL = "jdbc:sqlite:petclinic.db";
 
-    public static Connection getConnection() throws SQLException{
+    public static Connection getConnection() throws SQLException {
         Connection conn = DriverManager.getConnection(DB_URL);
 
-        try(Statement stmt = conn.createStatement()){
-            stmt.execute("PRAGMA foreign_keys =  ON ");
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("PRAGMA foreign_keys = ON");
         }
-        return  conn;
+
+        return conn;
     }
 }
