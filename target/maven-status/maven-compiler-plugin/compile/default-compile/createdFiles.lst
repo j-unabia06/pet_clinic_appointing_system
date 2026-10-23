@@ -1,0 +1,11 @@
+com\scc\dao\DatabaseConnection.class
+com\scc\ui\ReceptionistMenu.class
+com\scc\dao\UserDao.class
+com\scc\dao\AppointmentDao.class
+com\scc\model\User.class
+com\scc\ui\Authentication.class
+com\scc\ui\AdminMenu.class
+com\scc\ui\VeterinarianMenu.class
+com\scc\model\Appointment.class
+com\scc\dao\DatabaseInitializer.class
+com\scc\Main.class
