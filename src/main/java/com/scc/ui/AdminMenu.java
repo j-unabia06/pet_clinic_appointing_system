@@ -1,7 +1,9 @@
 package com.scc.ui;
 
 import com.scc.dao.UserDao;
+import com.scc.dao.ActivityLogDao;
 import com.scc.model.User;
+import com.scc.model.ActivityLog;
 
 import java.util.List;
 import java.util.Scanner;
@@ -9,10 +11,12 @@ import java.util.Scanner;
 public class AdminMenu {
 
     private final UserDao userDao;
+    private final ActivityLogDao activityLogDao;
     private final Scanner scanner;
 
     public AdminMenu(UserDao userDao, Scanner scanner) {
         this.userDao = userDao;
+        this.activityLogDao = new ActivityLogDao();
         this.scanner = scanner;
     }
 
@@ -27,7 +31,8 @@ public class AdminMenu {
             System.out.println("2. View Pending Registrations");
             System.out.println("3. Approve User Account");
             System.out.println("4. Update User Role and Status");
-            System.out.println("5. Logout");
+            System.out.println("5. View System Audit Logs");
+            System.out.println("6. Logout");
             System.out.println("0. Exit");
             System.out.print("Select: ");
 
@@ -43,7 +48,7 @@ public class AdminMenu {
                     break;
 
                 case "3":
-                    approveUser();
+                    approveUser(admin);
                     break;
 
                 case "4":
@@ -51,6 +56,10 @@ public class AdminMenu {
                     break;
 
                 case "5":
+                    auditLogMenu();
+                    break;
+
+                case "6":
                     loggedIn = false;
                     System.out.println("Logging out...");
                     break;
@@ -76,7 +85,8 @@ public class AdminMenu {
         displayUserTable(users, "PENDING REGISTRATIONS");
     }
 
-    private void approveUser() {
+    private void approveUser(User admin) {
+
         List<User> pendingUsers = userDao.getPendingUsers();
 
         displayUserTable(pendingUsers, "PENDING REGISTRATIONS");
@@ -109,7 +119,10 @@ public class AdminMenu {
             return;
         }
 
-        boolean approved = userDao.approveUser(userId);
+        boolean approved = userDao.approveUser(
+                userId,
+                admin.id()
+        );
 
         if (approved) {
             System.out.println(
@@ -178,7 +191,11 @@ public class AdminMenu {
         }
 
         boolean updated = userDao.updateUserRoleAndStatus(
-                targetUserId, newRole, newStatus);
+                targetUserId,
+                newRole,
+                newStatus,
+                currentAdmin.id()
+        );
 
         if (updated) {
             System.out.println("\n================================");
@@ -191,6 +208,80 @@ public class AdminMenu {
             System.out.println(
                     "Update failed. Please check the database.");
         }
+    }
+
+    private void auditLogMenu() {
+
+        boolean viewing = true;
+
+        while (viewing) {
+            System.out.println("\n================================");
+            System.out.println("       SYSTEM AUDIT LOGS");
+            System.out.println("================================");
+            System.out.println("1. View All System Logs");
+            System.out.println("2. Filter Logs by User ID");
+            System.out.println("0. Back");
+            System.out.print("Select: ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    displayAuditLogs(activityLogDao.getAllLogs());
+                    break;
+
+                case "2":
+                    int userId = readIntInput(
+                            "Enter User ID (0 to cancel): ");
+
+                    if (userId != 0) {
+                        displayAuditLogs(
+                                activityLogDao.getLogsByUserId(userId));
+                    }
+                    break;
+
+                case "0":
+                    viewing = false;
+                    break;
+
+                default:
+                    System.out.println("Invalid option.");
+            }
+        }
+    }
+
+    private void displayAuditLogs(List<ActivityLog> logs) {
+
+        System.out.println("\n================ SYSTEM AUDIT LOGS ================");
+
+        System.out.printf(
+                "%-5s | %-8s | %-18s | %-35s | %-20s%n",
+                "ID",
+                "User ID",
+                "Action Type",
+                "Description",
+                "Timestamp"
+        );
+
+        System.out.println("----------------------------------------------------------------------------------------------------------");
+
+        if (logs.isEmpty()) {
+            System.out.println("No activity logs found.");
+            return;
+        }
+
+        for (ActivityLog log : logs) {
+            System.out.printf(
+                    "%-5d | %-8d | %-18s | %-35s | %-20s%n",
+                    log.id(),
+                    log.userId(),
+                    log.actionType(),
+                    log.description(),
+                    log.timestamp()
+            );
+        }
+
+        System.out.println("----------------------------------------------------------------------------------------------------------");
     }
 
     private int readIntInput(String prompt) {
@@ -228,7 +319,6 @@ public class AdminMenu {
             if (role.equals("ADMIN")
                     || role.equals("RECEPTIONIST")
                     || role.equals("VETERINARIAN")) {
-
                 return role;
             }
 
@@ -253,7 +343,6 @@ public class AdminMenu {
 
             if (status.equals("APPROVED")
                     || status.equals("PENDING")) {
-
                 return status;
             }
 

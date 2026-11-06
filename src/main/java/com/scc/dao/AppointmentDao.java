@@ -11,7 +11,10 @@ import java.util.List;
 
 public class AppointmentDao {
 
+    private final ActivityLogDao activityLogDao = new ActivityLogDao();
+
     public boolean addAppointment(
+            int userId,
             String petName,
             String ownerName,
             String veterinarian,
@@ -34,12 +37,20 @@ public class AppointmentDao {
             pstmt.setString(4, appointmentDate);
             pstmt.setString(5, service);
 
-            return pstmt.executeUpdate() > 0;
+            boolean added = pstmt.executeUpdate() > 0;
+
+            if (added) {
+                activityLogDao.logAction(
+                        userId,
+                        "APPOINTMENT_CREATED",
+                        "Created appointment for pet: " + petName
+                );
+            }
+
+            return added;
 
         } catch (SQLException e) {
-            System.err.println(
-                    "Error adding appointment: " + e.getMessage()
-            );
+            System.err.println("Error adding appointment: " + e.getMessage());
             return false;
         }
     }
@@ -71,15 +82,17 @@ public class AppointmentDao {
             }
 
         } catch (SQLException e) {
-            System.err.println(
-                    "Error retrieving appointments: " + e.getMessage()
-            );
+            System.err.println("Error retrieving appointments: " + e.getMessage());
         }
 
         return appointments;
     }
 
-    public boolean updateAppointmentStatus(int appointmentId, String status) {
+    public boolean updateAppointmentStatus(
+            int userId,
+            int appointmentId,
+            String status
+    ) {
         String sql = """
                 UPDATE appointments
                 SET status = ?
@@ -92,12 +105,21 @@ public class AppointmentDao {
             pstmt.setString(1, status);
             pstmt.setInt(2, appointmentId);
 
-            return pstmt.executeUpdate() > 0;
+            boolean updated = pstmt.executeUpdate() > 0;
+
+            if (updated) {
+                activityLogDao.logAction(
+                        userId,
+                        "APPOINTMENT_UPDATED",
+                        "Updated status of appointment ID: "
+                                + appointmentId + " to " + status
+                );
+            }
+
+            return updated;
 
         } catch (SQLException e) {
-            System.err.println(
-                    "Error updating appointment: " + e.getMessage()
-            );
+            System.err.println("Error updating appointment: " + e.getMessage());
             return false;
         }
     }

@@ -1,7 +1,7 @@
-
 package com.scc.ui;
 
 import com.scc.dao.UserDao;
+import com.scc.dao.ActivityLogDao;
 import com.scc.model.User;
 
 import java.util.Scanner;
@@ -9,10 +9,12 @@ import java.util.Scanner;
 public class Authentication {
 
     private final UserDao userDao;
+    private final ActivityLogDao activityLogDao;
     private final Scanner sc;
 
     public Authentication(UserDao userDao, Scanner scanner) {
         this.userDao = userDao;
+        this.activityLogDao = new ActivityLogDao();
         this.sc = scanner;
     }
 
@@ -111,6 +113,13 @@ public class Authentication {
             return;
         }
 
+        activityLogDao.logAction(
+                user.id(),
+                "USER_LOGIN",
+                "User [" + user.id() + "] " +
+                        user.username() + " logged in."
+        );
+
         System.out.println(
                 "Welcome " + user.username()
                         + " | ROLE: " + user.roles()
@@ -122,15 +131,25 @@ public class Authentication {
                 break;
 
             case "VETERINARIAN":
-                new VeterinarianMenu(sc).display();
+                new VeterinarianMenu(user, sc).display();
                 break;
 
             case "RECEPTIONIST":
-                new ReceptionistMenu(sc).display();
+                new ReceptionistMenu(user, sc).display();
                 break;
 
             default:
                 System.out.println("Account role not recognized.");
+                return;
         }
+
+        activityLogDao.logAction(
+                user.id(),
+                "USER_LOGOUT",
+                "User [" + user.id() + "] " +
+                        user.username() + " logged out."
+        );
+
+        System.out.println("Logout activity recorded.");
     }
 }

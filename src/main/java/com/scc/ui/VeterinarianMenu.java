@@ -1,8 +1,8 @@
-
 package com.scc.ui;
 
 import com.scc.dao.AppointmentDao;
 import com.scc.model.Appointment;
+import com.scc.model.User;
 
 import java.util.List;
 import java.util.Scanner;
@@ -11,9 +11,11 @@ public class VeterinarianMenu {
 
     private final AppointmentDao appointmentDao;
     private final Scanner sc;
+    private final User user;
 
-    public VeterinarianMenu(Scanner scanner) {
+    public VeterinarianMenu(User user, Scanner scanner) {
         this.appointmentDao = new AppointmentDao();
+        this.user = user;
         this.sc = scanner;
     }
 
@@ -103,7 +105,10 @@ public class VeterinarianMenu {
             }
 
             boolean updated = appointmentDao.updateAppointmentStatus(
-                    appointmentId, status);
+                    user.id(),
+                    appointmentId,
+                    status
+            );
 
             if (updated) {
                 System.out.println("Appointment status updated successfully.");

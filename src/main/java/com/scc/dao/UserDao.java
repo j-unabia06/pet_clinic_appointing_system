@@ -11,15 +11,20 @@ import java.util.List;
 
 public class UserDao {
 
+    private final ActivityLogDao activityLogDao =
+            new ActivityLogDao();
+
     public UserDao() {
         try (Connection conn = DatabaseConnection.getConnection()) {
             defaultAdminGenerator(conn);
         } catch (SQLException e) {
-            System.err.println("Error initializing admin: " + e.getMessage());
+            System.err.println(
+                    "Error initializing admin: " + e.getMessage());
         }
     }
 
     public void defaultAdminGenerator(Connection conn) {
+
         String checkSql =
                 "SELECT COUNT(*) FROM users WHERE username = ?";
 
@@ -33,6 +38,7 @@ public class UserDao {
             checkStmt.setString(1, "admin");
 
             try (ResultSet rs = checkStmt.executeQuery()) {
+
                 if (rs.next() && rs.getInt(1) == 0) {
 
                     try (PreparedStatement insertStmt =
@@ -83,7 +89,8 @@ public class UserDao {
             return true;
 
         } catch (SQLException e) {
-            System.err.println("Registration failed: " + e.getMessage());
+            System.err.println(
+                    "Registration failed: " + e.getMessage());
             return false;
         }
     }
@@ -103,6 +110,7 @@ public class UserDao {
             try (ResultSet rs = pstmt.executeQuery()) {
 
                 if (rs.next()) {
+
                     String status = rs.getString("status");
 
                     if (!"APPROVED".equalsIgnoreCase(status)) {
@@ -131,6 +139,7 @@ public class UserDao {
     }
 
     public List<User> getAllUsers() {
+
         List<User> usersList = new ArrayList<>();
 
         String sql =
@@ -151,13 +160,15 @@ public class UserDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("Error fetching users: " + e.getMessage());
+            System.err.println(
+                    "Error fetching users: " + e.getMessage());
         }
 
         return usersList;
     }
 
     public List<User> getPendingUsers() {
+
         List<User> usersList = new ArrayList<>();
 
         String sql =
@@ -170,6 +181,7 @@ public class UserDao {
             pstmt.setString(1, "PENDING");
 
             try (ResultSet rs = pstmt.executeQuery()) {
+
                 while (rs.next()) {
                     usersList.add(new User(
                             rs.getInt("id"),
@@ -189,7 +201,7 @@ public class UserDao {
         return usersList;
     }
 
-    public boolean approveUser(int userId) {
+    public boolean approveUser(int userId, int adminId) {
 
         String sql =
                 "UPDATE users SET status = 'APPROVED' " +
@@ -200,7 +212,18 @@ public class UserDao {
 
             pstmt.setInt(1, userId);
 
-            return pstmt.executeUpdate() > 0;
+            boolean updated = pstmt.executeUpdate() > 0;
+
+            if (updated) {
+                activityLogDao.logAction(
+                        adminId,
+                        "USER_APPROVED",
+                        "Admin [" + adminId +
+                                "] approved account for User ID " + userId
+                );
+            }
+
+            return updated;
 
         } catch (SQLException e) {
             System.err.println(
@@ -211,7 +234,10 @@ public class UserDao {
     }
 
     public boolean updateUserRoleAndStatus(
-            int userId, String newRole, String newStatus) {
+            int userId,
+            String newRole,
+            String newStatus,
+            int adminId) {
 
         String sql =
                 "UPDATE users SET roles = ?, status = ? WHERE id = ?";
@@ -219,14 +245,31 @@ public class UserDao {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, newRole.trim().toUpperCase());
-            pstmt.setString(2, newStatus.trim().toUpperCase());
+            String role = newRole.trim().toUpperCase();
+            String status = newStatus.trim().toUpperCase();
+
+            pstmt.setString(1, role);
+            pstmt.setString(2, status);
             pstmt.setInt(3, userId);
 
-            return pstmt.executeUpdate() > 0;
+            boolean updated = pstmt.executeUpdate() > 0;
+
+            if (updated) {
+                activityLogDao.logAction(
+                        adminId,
+                        "USER_UPDATED",
+                        "Admin [" + adminId +
+                                "] changed role of User ID " + userId +
+                                " to " + role +
+                                " and status to " + status
+                );
+            }
+
+            return updated;
 
         } catch (SQLException e) {
-            System.err.println("Error updating user: " + e.getMessage());
+            System.err.println(
+                    "Error updating user: " + e.getMessage());
         }
 
         return false;

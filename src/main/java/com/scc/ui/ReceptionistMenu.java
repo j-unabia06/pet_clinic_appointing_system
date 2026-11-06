@@ -1,8 +1,8 @@
-
 package com.scc.ui;
 
 import com.scc.dao.AppointmentDao;
 import com.scc.model.Appointment;
+import com.scc.model.User;
 
 import java.util.List;
 import java.util.Scanner;
@@ -11,9 +11,11 @@ public class ReceptionistMenu {
 
     private final AppointmentDao appointmentDao;
     private final Scanner sc;
+    private final User user;
 
-    public ReceptionistMenu(Scanner scanner) {
+    public ReceptionistMenu(User user, Scanner scanner) {
         this.appointmentDao = new AppointmentDao();
+        this.user = user;
         this.sc = scanner;
     }
 
@@ -92,6 +94,7 @@ public class ReceptionistMenu {
         }
 
         boolean added = appointmentDao.addAppointment(
+                user.id(),
                 petName,
                 ownerName,
                 veterinarian,
