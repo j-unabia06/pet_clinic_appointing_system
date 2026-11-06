@@ -1,4 +1,3 @@
-
 package com.scc.dao;
 
 import com.scc.model.User;
@@ -19,7 +18,6 @@ public class UserDao {
             System.err.println("Error initializing admin: " + e.getMessage());
         }
     }
-
 
     public void defaultAdminGenerator(Connection conn) {
         String checkSql =
@@ -63,7 +61,6 @@ public class UserDao {
         }
     }
 
-
     public boolean registerUser(
             String username, String password, String role) {
 
@@ -90,7 +87,6 @@ public class UserDao {
             return false;
         }
     }
-
 
     public User login(String username, String password) {
 
@@ -134,7 +130,6 @@ public class UserDao {
         return null;
     }
 
-
     public List<User> getAllUsers() {
         List<User> usersList = new ArrayList<>();
 
@@ -161,7 +156,6 @@ public class UserDao {
 
         return usersList;
     }
-
 
     public List<User> getPendingUsers() {
         List<User> usersList = new ArrayList<>();
@@ -195,7 +189,6 @@ public class UserDao {
         return usersList;
     }
 
-
     public boolean approveUser(int userId) {
 
         String sql =
@@ -212,6 +205,28 @@ public class UserDao {
         } catch (SQLException e) {
             System.err.println(
                     "Error approving user: " + e.getMessage());
+        }
+
+        return false;
+    }
+
+    public boolean updateUserRoleAndStatus(
+            int userId, String newRole, String newStatus) {
+
+        String sql =
+                "UPDATE users SET roles = ?, status = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, newRole.trim().toUpperCase());
+            pstmt.setString(2, newStatus.trim().toUpperCase());
+            pstmt.setInt(3, userId);
+
+            return pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Error updating user: " + e.getMessage());
         }
 
         return false;
