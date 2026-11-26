@@ -123,4 +123,34 @@ public class AppointmentDao {
             return false;
         }
     }
+
+    public boolean deleteAppointment(int userId, int appointmentId) {
+        String sql = """
+                DELETE FROM appointments
+                WHERE id = ?
+                """;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, appointmentId);
+
+            boolean deleted = pstmt.executeUpdate() > 0;
+
+            if (deleted) {
+                activityLogDao.logAction(
+                        userId,
+                        "APPOINTMENT_DELETED",
+                        "Deleted appointment ID: " + appointmentId
+                );
+            }
+
+            return deleted;
+
+        } catch (SQLException e) {
+            System.err.println("Error deleting appointment: " + e.getMessage());
+            return false;
+        }
+    }
+
 }
